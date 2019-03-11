@@ -1,0 +1,54 @@
+---
+title: "time_series + plot"
+author: "ok"
+date: "March 10, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library('zoo')
+library('ggplot2')
+library('forecast')
+library('useful')
+library('scales')
+```
+
+Yearly Industry GDP Forecast With Auto Arima
+
+```{r}
+TS_GDP<-read.csv("C:/Users/shafa/Downloads/TD_GDP.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
+TS_GDP <- subset(TS_GDP, Year!= "2017") #removing year to predict
+TS_GDP <- subset(TS_GDP, Month == 12) #only choosing the yearly GDP (removing other months)
+All_ind<-TS_GDP$VAL[TS_GDP$NAICS == "All industries"] #isolating all industries
+All_ind<- ts(All_ind, start = min(TS_GDP$Year), end = max(TS_GDP$Year)) #converting to timestamp
+ind_best<- auto.arima(x = All_ind)
+ind_best
+
+
+```
+
+Plot of all industries
+
+```{r}
+plotTimesSeries(All_ind, ylab = "GDP", xlab = "Year", title = "Industry GDP Growth per year")
+```
+Forecasting next 10 Years GDP
+```{r}
+
+forecast10<-forecast(ind_best, h = 10)
+autoplot(forecast10, main = "GDP Forecast")
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
