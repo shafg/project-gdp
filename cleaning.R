@@ -2,6 +2,7 @@ library(dplyr)
 library(stringr)
 
 #Real Raw Data
+#link to raw_data https://www150.statcan.gc.ca/n1/tbl/csv/36100491-eng.zip
 GDP<-read.csv("C:/Users/shafa/Downloads/DS1/36100491.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
 names(GDP) <- c("REF_DT","GEO", "DGUID", "Seas.Adjst", "Prices", "NAICS", "Release", "UOM", "UOM_ID", 
                 "SCLR_FCTOR", "SCLR_ID", "VCTOR", "CORD", "VAL", "STATUS", "SMBL", "TRMNTD", "DECMLS")
