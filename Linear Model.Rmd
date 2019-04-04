@@ -1,0 +1,144 @@
+---
+title: "Linear Model"
+author: "ok"
+date: "March 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('Rcpp')
+library('ggplot2')
+library('class')
+library('prediction')
+library('FNN')
+library("gmodels")
+library(forecast)
+library('caret')
+library(dplyr)
+set.seed(123)
+```
+
+#Preparing Data for training and Testing, 80%-15% Split 
+#using 11 Years 2007-2017
+```{r}
+TD_GDP<-read.csv("C:/Users/shafa/Downloads/TD_GDP.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
+sapply(TD_GDP, function(x) sum(is.na(x)))
+#converting Industry into factors from characters
+TD_GDP$NAICS <- as.factor(TD_GDP$NAICS)
+# choosing 85% of the data to be the training data
+data_train <- sample(nrow(TD_GDP), floor(nrow(TD_GDP)*0.85))
+train_data<- TD_GDP[data_train,]
+test_data <- TD_GDP[-data_train,]
+```
+
+#Selecting all the input features VS Selecting only the Industry Feature
+```{r}
+#using all features
+model1<-lm(VAL~., data=train_data)
+#print(model1)
+prediction1 <- model1 %>% predict(test_data)
+data.frame( R2 = R2(prediction1, test_data$VAL),
+            RMSE = RMSE(prediction1, test_data$VAL),
+            MAE = MAE(prediction1, test_data$VAL))
+#R2        RMSE        MAE
+#0.9941536	994.9583	344.5901			
+
+err_rate1 <- RMSE(prediction1, test_data$VAL)/mean(test_data$VAL) #prediction error rate
+err_rate1 #[1] 0.2931654
+
+#using just industry
+model2<-lm(VAL~NAICS, data=train_data)
+#print(model2)
+prediction2 <- model2 %>% predict(test_data)
+data.frame( R2 = R2(prediction2, test_data$VAL),
+            RMSE = RMSE(prediction2, test_data$VAL),
+            MAE = MAE(prediction2, test_data$VAL))
+#R2        RMSE        MAE
+#0.993917	1014.82	267.2547					
+
+err_rate2 <- RMSE(prediction2, test_data$VAL)/mean(test_data$VAL) #prediction error rate
+err_rate2 #[1] 0.2988994
+
+
+```
+
+
+#Stepwise regression to choose best feature mix
+```{r}
+library(MASS) # stepwise regression
+library(leaps) # all subsets regression
+
+#stepwise-forward
+full_model <-lm(VAL~., data = TD_GDP)
+null_model <- lm(VAL~1,data = TD_GDP)
+step_forward <- stepAIC(null_model, scope=list(lower=null_model, upper=full_model), direction= "forward", trace=TRUE)
+summary(step_forward)
+
+#stepwise-backward
+step_backward <- stepAIC(full_model, direction= "backward", trace=TRUE)
+summary(step_backward)
+
+#choosing all of the predictors gives a better prediction
+
+```
+
+
+
+#Cross-Validation using train 85%, then testing on 15% 
+```{r}
+
+train_control <- trainControl(method = "cv", 
+                              number = 10, savePredictions = TRUE)
+# Train the model
+lm_model <- train(VAL~., data = train_data, method = "lm",
+               trControl = train_control)
+# Summarize the results
+print(lm_model)
+
+# RMSE      Rsquared   MAE     
+#  1012     0.994     349
+
+#Testing the real split 15%
+
+prediction4<- predict(lm_model, newdata = test_data)
+
+data.frame( R2 = R2(prediction4, test_data$VAL),
+            RMSE = RMSE(prediction4, test_data$VAL),
+            MAE = MAE(prediction4, test_data$VAL))
+
+
+#R2        RMSE        MAE
+#0.994	   995	       345				
+
+LM_RMSE <- RMSE(RMSE(prediction4, test_data$VAL))
+
+err_rate4 <- RMSE(prediction4, test_data$VAL)/mean(test_data$VAL) #prediction error rate
+err_rate4 #[1] 0.268
+
+
+#plotting the predict and actual side by side
+plot(x = prediction4, y = test_data$VAL, col = c("dark blue","dark red"), pch = c(3,1))
+
+```
+
+
+# K-fold cross-validation using cv.lm on complete train_data VS actual
+```{r}
+library("DAAG")
+my_lm <- lm(VAL~., train_data)
+lm_cv <- cv.lm(TD_GDP, my_lm, m=10, plotit = c("Observed","Residual")) # 10 fold cross-validation
+
+#Sum of squares = 4.16e+09     Mean square = 1154683   n = 3063 
+
+#Overall (Sum over all 3063 folds) 
+#     ms 
+#1043159
+sqrt(1025538) #RMSE [1] 1013
+
+
+
+```
+
+```
+
