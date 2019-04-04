@@ -1,0 +1,206 @@
+---
+title: "KNN-Model"
+author: "ok"
+date: "March 29, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('Rcpp')
+library('ggplot2')
+library('class')
+library('prediction')
+library('FNN')
+library("gmodels")
+library(forecast)
+library('caret')
+library(dplyr)
+set.seed(123)
+```
+
+#Preparing Data for training and Testing, 80%-20% Split 
+#using 11 Years 2007-2017
+```{r}
+TD_GDP<-read.csv("C:/Users/shafa/Downloads/TD_GDP.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
+sapply(TD_GDP, function(x) sum(is.na(x)))
+#converting Industry into factors from characters
+TD_GDP$NAICS <- as.numeric(as.factor(TD_GDP$NAICS))
+# choosing 85% of the data to be the training data
+data_train <- sample(nrow(TD_GDP), floor(nrow(TD_GDP)*0.80))
+train_data<- TD_GDP[data_train,]
+test_data <- TD_GDP[-data_train,]
+
+train_labels <- train_data$VAL
+test_labels <- test_data$VAL
+
+```
+
+
+#plotting different k against their predicts
+```{r}
+X_gdp = train_data["NAICS"]
+y_gdp = train_data$VAL
+
+gdp_grid = data.frame(NAICS = seq(range(X_gdp$NAICS)[1], range(X_gdp$NAICS)[2], by = 10))
+
+pred_001 = knnreg(VAL~NAICS, data = train_data, k = 5)
+pred_005 = knnreg(VAL~NAICS, data = train_data, k = 9)
+pred_010 = knnreg(VAL~NAICS, data = train_data, k = 11)
+pred_050 = knnreg(VAL~NAICS, data = train_data, k = 15)
+pred_100 = knnreg(VAL~NAICS, data = train_data, k = 18)
+pred_506 = knnreg(VAL~NAICS, data = train_data, k = 22)
+
+
+
+plot(VAL~NAICS, data = TD_GDP, cex = .8, col = "dodgerblue", main = "k = 5")
+lines(predict(pred_001, test_data), col = "darkorange", lwd = 0.25)
+
+plot(VAL~NAICS, data = TD_GDP, cex = .8, col = "dodgerblue", main = "k = 9")
+lines(predict(pred_001, test_data), col = "darkorange", lwd = 0.75)
+
+plot(VAL~NAICS, data = TD_GDP, cex = .8, col = "dodgerblue", main = "k = 11")
+lines(predict(pred_001, test_data), col = "darkorange", lwd = 1)
+
+plot(VAL~NAICS, data = TD_GDP, cex = .8, col = "dodgerblue", main = "k = 15")
+lines(predict(pred_001, test_data), col = "darkorange", lwd = 1.5)
+
+plot(VAL~NAICS, data = TD_GDP, cex = .8, col = "dodgerblue", main = "k = 18")
+lines(predict(pred_001, test_data), col = "darkorange", lwd = 2)
+
+plot(VAL~NAICS, data = TD_GDP, cex = .8, col = "dodgerblue", main = "k = 22")
+lines(predict(pred_001, test_data), col = "darkorange", lwd = 2)
+
+#There is no difference in the prediction when we change the number of k. 
+
+```
+
+#using all predictors, different Formula 
+```{r}
+
+gdp_knn_all <- knnreg(VAL~., data = train_data, k = 5)
+print(gdp_knn_all)
+knn_predict_all<- predict(gdp_knn_all, newdata = test_data)
+
+data.frame( R2 = R2(knn_predict_all, test_data$VAL),
+            RMSE = RMSE(knn_predict_all, test_data$VAL),
+            MAE = MAE(knn_predict_all, test_data$VAL))
+
+#R2        RMSE        MAE
+#0.7043029	7203.919	2248.128		
+
+```
+
+
+## MODEL 2: KNN 
+```{r}
+#Using the Formula VAL~NAICS, only one important Predictor, will be using this for my cross Validation
+#changing Ks doesnt change the RMSE 
+
+gdp_knn <- knnreg(VAL~NAICS, data = train_data, k = 5)
+print(gdp_knn)
+knn_predict<- predict(gdp_knn, newdata = test_data)
+
+data.frame( R2 = R2(knn_predict, test_data$VAL),
+            RMSE = RMSE(knn_predict, test_data$VAL),
+            MAE = MAE(knn_predict, test_data$VAL))
+
+#R2        RMSE        MAE
+#0.9932717	1040.52	264.0969	
+
+```
+
+#KNN Cross-validation
+```{r}
+
+#10-Fold Cross Validation
+train_control <- trainControl(method = "cv",
+                              number = 10, savePredictions = TRUE)
+
+knn_model <- train(VAL~NAICS, data = train_data, method = "knn", preProcess = "knnImpute",  trControl = train_control)
+print(knn_model)
+
+#k-Nearest Neighbors 
+
+#28828 samples
+#    1 predictor
+
+#Pre-processing: nearest neighbor imputation (1), centered (1), scaled (1) 
+#Resampling: Cross-Validated (10 fold) 
+#Summary of sample sizes: 25946, 25946, 25946, 25945, 25944, 25946, ... 
+#Resampling results across tuning parameters:
+
+#  k  RMSE      Rsquared   MAE     
+#  5  1034.174  0.9937593  269.9634
+#  7  1034.174  0.9937593  269.9634
+#  9  1034.174  0.9937593  269.9634
+
+#RMSE was used to select the optimal model using the smallest value.
+#The final value used for the model was k = 9.
+
+knn_model2 <- train(VAL~NAICS, data = train_data, method = "knn", trControl = train_control)
+print(knn_model2)
+
+#k-Nearest Neighbors 
+
+#28828 samples
+#    1 predictor
+
+#No pre-processing
+#Resampling: Cross-Validated (10 fold) 
+#Summary of sample sizes: 25944, 25945, 25945, 25947, 25944, 25944, ... 
+#Resampling results across tuning parameters:
+
+#  k  RMSE      Rsquared   MAE     
+#  5  1028.745  0.9938137  269.9753
+#  7  1028.745  0.9938137  269.9753
+#  9  1028.745  0.9938137  269.9753
+
+#RMSE was used to select the optimal model using the smallest value.
+#The final value used for the model was k = 9.
+
+knn_model3 <- train(VAL~NAICS, data = train_data, method = "knn", trControl = train_control, tunelength = 10)
+print(knn_model3)
+#results are pretty much the same when I  tunelength =10:
+#k-Nearest Neighbors 
+
+#28828 samples
+#    1 predictor
+
+#No pre-processing
+#Resampling: Cross-Validated (10 fold) 
+#Summary of sample sizes: 25945, 25945, 25946, 25945, 25945, 25945, ... 
+#Resampling results across tuning parameters:
+
+#  k  RMSE      Rsquared   MAE     
+#  5  1030.344  0.9937325  269.4636
+#  7  1030.344  0.9937325  269.4636
+#  9  1030.344  0.9937325  269.4636
+
+#RMSE was used to select the optimal model using the smallest value.
+#The final value used for the model was k = 9.
+
+# Make predictions on the test data using all 3 cross-validated models 
+knn_pred_1 <- knn_model %>% predict(test_data)
+knn_pred_2 <- knn_model2 %>% predict(test_data)
+knn_pred_3 <- knn_model3 %>% predict(test_data)
+
+# Compute the prediction error RMSE
+KNN_RMSE <- RMSE(knn_pred_1, test_data$VAL) #[1] 1049.888
+RMSE(knn_pred_2, test_data$VAL) #[1] 1049.888
+RMSE(knn_pred_3, test_data$VAL) #[1] 1049.888
+
+data.frame( R2 = R2(knn_pred_1, test_data$VAL),
+            RMSE = RMSE(knn_pred_1, test_data$VAL),
+            MAE = MAE(knn_pred_1, test_data$VAL))
+
+
+#R2        RMSE        MAE
+#0.9941993	1049.888	274.1256		
+
+err_rate3 <- RMSE(knn_pred_1, test_data$VAL)/mean(test_data2$VAL) #prediction error rate
+err_rate3  #[1] 0.2881492
+
+#all three cross Validation models have performed the same.
+```
+
