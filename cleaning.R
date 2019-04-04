@@ -53,7 +53,7 @@ table(TD_GDP$Year)
 View(table(TD_GDP$NAICS))
 
 #4:The years with full data for each industry are from 2007 onwards, we will now use the data from these 
-#years only, 10 years to build the model, 2017 as the test year.
+#years only, split further for our train and test.
 
 TD_GDP<-TD_GDP[TD_GDP$Year >= 2007,]
 table(TD_GDP$Year)
