@@ -1,0 +1,201 @@
+---
+title: "Random Forest Model"
+author: "ok"
+date: "March 25, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library('Rcpp')
+library('ggplot2')
+library(dplyr)
+library('class')
+library('prediction')
+library("gmodels")
+library('randomForest')
+library(forecast)
+library('caret')
+library("rfUtilities")
+set.seed(123)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+TD_GDP<-read.csv("C:/Users/shafa/Downloads/TD_GDP.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
+sapply(TD_GDP, function(x) sum(is.na(x)))
+TD_GDP$NAICS <- as.numeric(as.factor(TD_GDP$NAICS)) #changing categorical to numeric.
+#Error in randomForest.default(m, y, ...) : Can not handle categorical predictors with more than 53 categories.
+
+```
+
+
+#Random Forest with 80-20% split using only Inudstry as inportant feature with 100 and 500 trees, using mtry = 1 and mtry = 2
+```{r}
+data_train <- sample(nrow(TD_GDP), floor(nrow(TD_GDP)*0.80))
+train_data<- TD_GDP[data_train,]
+test_data <- TD_GDP[-data_train,]
+myformula<- VAL~NAICS
+
+gdpForest1<- randomForest(formula = myformula, data = train_data, ntree = 100, mtry = 2)
+class(gdpForest1)
+
+RF_pred1= predict(gdpForest1, newdata = test_data)
+
+plot(gdpForest1)
+
+#Call:
+# randomForest(formula = myformula, data = train_data) 
+#               Type of random forest: regression
+#                      Number of trees: 100
+#No. of variables tried at each split: 1
+
+#          Mean of squared residuals: 1052224
+#                    % Var explained: 99.39
+
+data.frame( R2 = R2(RF_pred1, test_data$VAL),
+            RMSE = RMSE(RF_pred1, test_data$VAL),
+            MAE = MAE(RF_pred1, test_data$VAL))
+
+# R2        RMSE        MAE  #mtry = 1
+#0.9941914	1050.97	274.393			
+
+# R2        RMSE        MAE  #mtry = 2 #slight better RMSE with mtry = 2
+# 0.994334	916.4878	257.8448	
+
+gdpForest2<- randomForest(formula = myformula, data = train_data, ntree = 500, mtry = 2)
+
+
+RF_pred2= predict(gdpForest2, newdata = test_data)
+
+plot(gdpForest2)
+
+#Call:
+# randomForest(formula = myformula, data = train_data, ntree = 500) 
+#               Type of random forest: regression
+#                     Number of trees: 500
+#No. of variables tried at each split: 1
+
+#          Mean of squared residuals: 1053680
+#                    % Var explained: 99.39
+
+data.frame( R2 = R2(RF_pred2, test_data$VAL),
+            RMSE = RMSE(RF_pred2, test_data$VAL),
+            MAE = MAE(RF_pred2, test_data$VAL))
+
+# R2        RMSE        MAE   #mtry = 1
+#0.9941997	1050.102	274.1524	
+
+# R2        RMSE        MAE   #mtry = 2 #slight betterment with mtry = 2
+#0.9943437	915.9627	257.8708	
+
+#A list and rf.fit class object with "fit" matrix of fit statistics and "message" indicating overfit risk.
+
+rf.regression.fit(gdpForest1)
+rf.regression.fit(gdpForest2)
+
+#$message
+#[1] "Model is not overfit"
+#None of the model is overfit
+
+#somehow the results are better with mtry = 2, we will use mtry and 500 trees for cross-validation Model.
+
+```
+
+
+#RandomForest using all features and using 100 and 500 trees
+```{r}
+myformula2<- VAL~.
+
+gdpForest3<- randomForest(formula = myformula2, data = train_data, ntree = 100)
+gdpForest3
+
+RF_pred3= predict(gdpForest3, newdata = test_data)
+
+
+#Call:
+# randomForest(formula = myformula2, data = train_data, ntree = 100) 
+#               Type of random forest: regression
+#                     Number of trees: 100
+#No. of variables tried at each split: 1
+
+#          Mean of squared residuals: 49887796
+#                    % Var explained: 71.2
+
+data.frame( R2 = R2(RF_pred3, test_data$VAL),
+            RMSE = RMSE(RF_pred3, test_data$VAL),
+            MAE = MAE(RF_pred3, test_data$VAL))
+
+# R2        RMSE        MAE
+# 0.8033792	6666.386	3096.409	
+
+gdpForest4<- randomForest(formula = myformula2, data = train_data, ntree = 500)
+gdpForest4
+
+RF_pred4= predict(gdpForest4, newdata = test_data)
+
+#Call:
+# randomForest(formula = myformula2, data = train_data, ntree = 500) 
+#               Type of random forest: regression
+#                     Number of trees: 500
+#No. of variables tried at each split: 1
+
+#          Mean of squared residuals: 52139145
+#                    % Var explained: 69.9
+
+data.frame( R2 = R2(RF_pred4, test_data$VAL),
+            RMSE = RMSE(RF_pred4, test_data$VAL),
+            MAE = MAE(RF_pred4, test_data$VAL))
+
+# R2        RMSE        MAE
+#0.7835934	6985.877	3211.515	
+
+#significantly increased the RMSE because of the features, we will not use all of them for cross validation.
+
+```
+
+
+
+#Cross Validation of the best Feature Selection, on the set of train Data, and then testing it on the  Test Data
+```{r}
+train_control <- trainControl(method = "cv",
+                              number = 10, savePredictions = TRUE)
+
+rf.cv3 <- train(VAL~NAICS, data = train_data, method = "rf", trControl = train_control)
+print(rf.cv3)
+
+#Random Forest 
+
+#28828 samples
+#    1 predictor
+
+#No pre-processing
+#Resampling: Cross-Validated (10 fold) 
+#Summary of sample sizes: 25944, 25945, 25945, 25945, 25946, 25946, ... 
+#Resampling results:
+
+#  RMSE     Rsquared   MAE     
+#  1060.64  0.9937242  275.0358
+
+#Tuning parameter 'mtry' was held constant at a value of 2
+
+##Predicting the initial Test Data, reserved in the beginning. The RMSE is almost the same. The Model has performed very well predicting the results. 
+
+RF_Pred5 <- predict(rf.cv3, newdata = test_data)
+data.frame( R2 = R2(RF_Pred5, test_data$VAL),
+            RMSE = RMSE(RF_Pred5, test_data$VAL),
+            MAE = MAE(RF_Pred5, test_data$VAL))
+
+# R2        RMSE        MAE
+#0.9943472	915.5825	257.7899		
+
+RF_RMSE <- RMSE(RF_Pred5, test_data$VAL) #[1] 915.5825
+
+
+```
+
