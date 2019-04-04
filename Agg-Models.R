@@ -1,8 +1,8 @@
 
-library('dplyr')
-library('FNN')
-library('useful')
-library('randomForest')
+
+library(dplyr)
+library(stringr)
+library("Hmisc")
 
 ##Working on forecasts for Aggregates of all industries.
 
@@ -13,6 +13,68 @@ library('randomForest')
 #Link for info: "https://www.statcan.gc.ca/eng/statistical-programs/document/1301_D2_T9_V1"
 #we can easily extract 21 years worth of data for aggregates of industries, 
 #except one (Management of companies and enterprises)
+
+
+#Real Raw Data
+GDP<-read.csv("C:/Users/shafa/Downloads/DS1/36100491.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
+names(GDP) <- c("REF_DT","GEO", "DGUID", "Seas.Adjst", "Prices", "NAICS", "Release", "UOM", "UOM_ID", 
+                "SCLR_FCTOR", "SCLR_ID", "VCTOR", "CORD", "VAL", "STATUS", "SMBL", "TRMNTD", "DECMLS")
+#Breaking the Year and Month string
+GDP$Year <- substr(GDP$REF_DT,1,4)
+GDP$Month <- substr(GDP$REF_DT,6,8)
+
+#Removing the incomplete 2018 Data
+
+#Year_18<-GDP[GDP$Year == "2018", ]
+#nrow(Year_18)
+GDP_1 <- subset(GDP, Year!="2018")
+#View(GDP_1[1:2000,])
+
+#Choosing the only attributes/columns we need
+GDP_2<-GDP_1[,c(1,19,20,4,5,6,7,14)]
+#View(GDP_2[1:200,])
+#Removing NAs, as we have mutiple duplicates, we dont need to treat the NAs or fill in the missing,
+#the removal is best here
+sapply(GDP_2, function(x) sum(is.na(x)))
+GDP_2<-GDP_2[complete.cases(GDP_2),]
+
+#Taking notice of Seasonaly Adjusted and Trading Adjusted Data
+table(GDP_2$Prices)
+table(GDP_2$Seas.Adjst)
+TD_GDP<-GDP_2[GDP_2$Seas.Adjst == "Trading-day adjusted",]
+#SA_GDP<-GDP_2[GDP_2$Seas.Adjst != "Trading-day adjusted",]
+
+#we are looking for dates that have the complete data from 1997-2017, if not we'd choose the years
+#with all the industry values in them.
+#our focus is the same trading day adjusted value.. corresponding to the same Release date over the years
+#over the months. 
+
+#1: First we will take out the Release dates which are effective Nov 30th, as we have seen in the notes
+#it's incomplete
+TD_GDP<-TD_GDP[TD_GDP$Release != "December 21, 2018" & TD_GDP$Release != "November 30, 2018",]
+
+#2: breaking the Years in the Release for my inquiry to find the most released dates.
+TD_GDP$Rel_Yr <- str_sub(TD_GDP$Release,-4,-1)
+
+TD_GDP <- subset(TD_GDP, Rel_Yr =="2018")
+#View(table(TD_GDP$Release))
+
+#3:Choosing the most recent Release date for my observation.
+TD_GDP<-TD_GDP[TD_GDP$Release == "October 31, 2018",]
+
+
+#4:Final attributes we now need to convert it inot an annual time series
+IND_GDP<-TD_GDP[,c(2,3,6,8)]
+IND_GDP$Year<-as.numeric(TD_GDP$Year)
+IND_GDP$Month<-as.numeric(TD_GDP$Month)
+str(IND_GDP)
+
+#Writing CSV with the new dataframes
+write.csv(IND_GDP, file = "C:/Users/shafa/Downloads/IND_GDP.csv", row.names = FALSE)
+
+
+#5: The industry annual data from 1997 onwards, we will now use the data from, we will now use Month == 12,
+#as the anual GDP Value and forecast the next years on its basis. 
 
 IND_GDP<-read.csv("C:/Users/shafa/Downloads/IND_GDP.csv", header = TRUE, sep = ",", stringsAsFactors = F, na.strings = c("","NA","?"))
 View(table(IND_GDP$NAICS)) #21 years * 12 months = 252 should be the total number of entry for each industry. 
@@ -50,190 +112,9 @@ AGG_GDP<-filter(IND_GDP, NAICS %in% c("All industries" , "Agriculture, forestry,
                                   "Health care and social assistance" , "Arts, entertainment and recreation",
                                   "Accommodation and food services" , "Other services (except public administration)",
                                   "Public administration"))
-View(AGG_GDP)
-str(AGG_GDP)
+
 View(table(AGG_GDP$NAICS)) #observed just "Management of companies and enterprises" has 132 enteries for 11 years.
 set.seed(100)
 
-# MODEL 1a: (VAL~NAICS) Simple Linear Regression (using the 21 years)
-train_data<-AGG_GDP[AGG_GDP$Year != 2017,] #choosing test data
-test_data<-AGG_GDP[AGG_GDP$Year == 2017,] #choosing train data
-
-model1 <-lm(VAL~NAICS, data = train_data) #linear model
-prediction1 <- predict(model1, interval = "prediction", newdata = test_data)
-
-pred1<-prediction1[,"fit"] #calculating errors
-
-pred_vs_act1<-cbind.data.frame(pred1, test_data$VAL)
-pred_vs_act1$errors<- (pred_vs_act1$pred - pred_vs_act1$`test_data$VAL`)
-View(pred_vs_act1)
-
-hist(pred_vs_act1$errors, breaks = 50, main = "errors") #plotting errors
-summary(model1)
-rmse1 <- sqrt(sum((prediction1[,"fit"] - test_data$VAL)^2)/nrow(test_data))
-rmse1 #[1] 6317.509
-
-# MODEL 1b: (VAL~NAICS) Simple Linear Regression (using the 11 years)
-AGG_GDP1<-AGG_GDP[AGG_GDP$Year >= 2007,]
-View(table(AGG_GDP1$NAICS))
-
-train_data<-AGG_GDP1[AGG_GDP1$Year != 2017,] #choosing test data
-test_data<-AGG_GDP1[AGG_GDP1$Year == 2017,] #choosing train data
-
-modely <-lm(VAL~NAICS, data = train_data) #linear model
-prediction2 <- predict(modely, interval = "prediction", newdata = test_data)
-
-pred2<-prediction2[,"fit"] #calculating errors
-
-pred_vs_act2<-cbind.data.frame(pred2, test_data$VAL)
-pred_vs_act2$errors<- (pred_vs_act2$pred - pred_vs_act2$`test_data$VAL`)
-View(pred_vs_act2)
-
-hist(pred_vs_act2$errors, breaks = 50, main = "errors") #plotting errors
-summary(modely)
-rmse2 <- sqrt(sum((prediction2[,"fit"] - test_data$VAL)^2)/nrow(test_data))
-rmse2 #[1] 3691.144 #predictions have improved
-
-#MODEL 2a: KNN #using 21 years
-#taking the non-numeric values out of the dataset while training
-AGG_GDP$NAICS<-as.factor(AGG_GDP$NAICS)
-train_data<-AGG_GDP[AGG_GDP$Year != 2017,]
-test_data<-AGG_GDP[AGG_GDP == 2017,]
-
-train.set_new <- train_data[-3]
-test.set_new <- test_data[-3]
-
-train_labels <- train_data$VAL
-test_labels <- test_data$VAL
-
-GDP_pred <- knn.reg(train = train.set_new, test = test.set_new, y = train_labels, k = 10)
-rmse <- sqrt(sum((test_data$VAL - GDP_pred$pred)^2)/length(test_data$VAL))
-rmse #859.5114
-
-#MODEL 2b: KNN #using 11 years
-AGG_GDP1$NAICS<-as.factor(AGG_GDP1$NAICS)
-train_data<-AGG_GDP1[AGG_GDP1$Year != 2017,]
-test_data<-AGG_GDP1[AGG_GDP1 == 2017,]
-
-train.set_new <- train_data[-3]
-test.set_new <- test_data[-3]
-
-train_labels <- train_data$VAL
-test_labels <- test_data$VAL
-
-GDP_pred2 <- knn.reg(train = train.set_new, test = test.set_new, y = train_labels, k = 10)
-rmse_b <- sqrt(sum((test_data$VAL - GDP_pred2$pred)^2)/length(test_data$VAL))
-rmse_b #859.5711 (not a significant difference)
-
-
-#MODEL 2c: KNN, when converting the industry into numeric rather than factor
-dataset <- AGG_GDP  
-dataset$NAICS<-as.numeric(dataset$NAICS)
-train_data<-dataset[dataset$Year != 2017,]
-test_data<-dataset[dataset == 2017,]
-
-prediction <- knn.reg(train_data, 
-                      test = test_data,
-                      dataset$VAL, k = 10)  
-rmse_c <- sqrt(sum((test_data$VAL - prediction$pred)^2)/length(test_data$VAL))
-rmse_c #859.5116 (not much of a difference) 
-
-#MODEL 3: RandomForest
-#Using 21 years and 100 trees
-#training and testing the whole data
-
-myformula<- AGG_GDP$VAL~AGG_GDP$NAICS
-gdpx<-build.x(myformula, data = AGG_GDP)
-gdpy<-build.y(myformula, data = AGG_GDP)
-gdpForest1<- randomForest(x=gdpx, y=gdpy, ntree = 100)
-gdpForest1
-
-RF_pred1=predict(gdpForest1, gdpx)
-RF_pred1
-
-rmse3 <- sqrt(sum((AGG_GDP$VAL - RF_pred1)^2)/length(AGG_GDP$VAL))
-rmse3 #3726.665
-
-#ntree=100
-#Call:
-# randomForest(x = gdpx, y = gdpy, ntree = 100) 
-#Type of random forest: regression
-#Number of trees: 100
-#No. of variables tried at each split: 7
-
-#Mean of squared residuals: 14032894
-#% Var explained: 97.71
- 
-#MODEL 3b: RandomForest
-#Using 11 years and 100 trees
-#training and testing the whole data
-
-myformula1<- AGG_GDP1$VAL~AGG_GDP1$NAICS
-gdpx1<-build.x(myformula1, data = AGG_GDP1)
-gdpy1<-build.y(myformula1, data = AGG_GDP1)
-gdpForest2<- randomForest(x=gdpx1, y=gdpy1, ntree = 100)
-gdpForest2
-
-RF_pred2=predict(gdpForest2, gdpx1)
-RF_pred2
-
-rmse4 <- sqrt(sum((AGG_GDP1$VAL - RF_pred1)^2)/length(AGG_GDP1$VAL))
-rmse4
-
-#ntree=100
-#Call:
-#  randomForest(x = gdpx1, y = gdpy1, ntree = 100) 
-#Type of random forest: regression
-#Number of trees: 100
-#No. of variables tried at each split: 7
-
-#Mean of squared residuals: 4747089
-#% Var explained: 99.34
-
-#MODEL 3c: RandomForest
-#Using 21 years and unlimited trees
-#training and testing the whole data
-
-gdpForest3<- randomForest(x=gdpx, y=gdpy)
-gdpForest3
-
-RF_pred3=predict(gdpForest3, gdpx)
-RF_pred3
-
-rmse5 <- sqrt(sum((AGG_GDP$VAL - RF_pred3)^2)/length(AGG_GDP$VAL))
-rmse5 #3724.359
-
-#ntree=500
-#Call:
-#  randomForest(x = gdpx, y = gdpy) 
-#Type of random forest: regression
-#Number of trees: 500
-#No. of variables tried at each split: 7
-
-#Mean of squared residuals: 13977128
-#% Var explained: 97.72
-
-#MODEL 3d: RandomForest
-#Using 11 years and unlimited trees
-#training and testing the whole data
-
-gdpForest4<- randomForest(x=gdpx1, y=gdpy1)
-gdpForest4
-
-RF_pred4=predict(gdpForest4, gdpx1)
-RF_pred4
-
-rmse4 <- sqrt(sum((AGG_GDP1$VAL - RF_pred4)^2)/length(AGG_GDP1$VAL))
-rmse4 #2185.181
-
-#ntree=500
-#Call:
-#  randomForest(x = gdpx1, y = gdpy1) 
-#Type of random forest: regression
-#Number of trees: 500
-#No. of variables tried at each split: 7
-
-#Mean of squared residuals: 4844636
-#% Var explained: 99.32
-
+AGG_GDP <- subset(AGG_GDP, Month == 12) #only taking the annual year end GDP
 
