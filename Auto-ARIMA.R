@@ -18,6 +18,8 @@ All_ind<- ts(All_ind, start = min(IND_GDP_Yr$Year), end = max(IND_GDP_Yr$Year))
 
 plotTimesSeries(All_ind, ylab = "GDP", xlab = "Year", title = "Industry GDP per year", acf = T)
 
+#recession in 2007 and 2008 figures dropped
+
 ind_best<- auto.arima(x = All_ind)
 ind_best
 
@@ -33,8 +35,8 @@ ind_best
 #AIC=342.12   AICc=342.87   BIC=344.01
 
 #Forecasting next 5 years
-forecast_all_ind<-forecast(ind_best, h = 5)
-autoplot(forecast_all_ind, main = "All Industries GDP Forecast")
+forecast_all_ind5<-forecast(ind_best, h = 5)
+autoplot(forecast_all_ind5, main = "All Industries GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       143010.4 140679.4 145341.4 139445.4 146575.3
@@ -43,6 +45,8 @@ autoplot(forecast_all_ind, main = "All Industries GDP Forecast")
 #2020       151171.5 146509.5 155833.4 144041.6 158301.3
 #2021       153891.8 148679.6 159104.1 145920.4 161863.3
 
+forecast_all_ind5[["mean"]]
+# 2017 - [1] 143010.4
 # All Industry Real GDP 2017, 145375
 
 ## 1: Agriculture, forestry, fishing and hunting
@@ -50,7 +54,7 @@ Affh_ind<- IND_GDP_Yr$VAL[IND_GDP_Yr$NAICS == "Agriculture, forestry, fishing an
 Affh_ind<- ts(Affh_ind, start = min(IND_GDP_Yr$Year), end = max(IND_GDP_Yr$Year))
 
 plotTimesSeries(Affh_ind, ylab = "GDP", xlab = "Year", title = "Agriculture, forestry, fishing and hunting/Year", acf = T)
-autoplot(Affh_ind, ylab = "GDP", xlab = "Year", title = "Agriculture, forestry, fishing and hunting/Year", acf = T)
+
 Affh_best<- auto.arima(x = Affh_ind)
 Affh_best
 
@@ -61,7 +65,7 @@ Affh_best
 #AIC=213.21   AICc=213.44   BIC=214.15
 
 forecast_Affh<-forecast(Affh_best, h = 5)
-autoplot(forecast_Affh, main = "Agriculture, forestry, fishing and hunting GDP Forecast")
+autoplot(forecast_Affh, main = "Agriculture, forestry, fishing and hunting GDP Forecast",xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80     Lo 95    Hi 95
 #2017           1230 1149.586 1310.414 1107.0170 1352.983
@@ -70,6 +74,8 @@ autoplot(forecast_Affh, main = "Agriculture, forestry, fishing and hunting GDP F
 #2020           1230 1069.171 1390.829  984.0340 1475.966
 #2021           1230 1050.188 1409.812  955.0017 1504.998
 
+forecast_Affh[["mean"]]
+# 2017 - [1] 1230
 #Agriculture, forestry, fishing and hunting Real GDP 2017, 1248
 
 ## 2: Mining, quarrying, and oil and gas extraction
@@ -88,7 +94,8 @@ mqogg_best
 #AIC=297.34   AICc=297.57   BIC=298.28
 
 forecast_mqogg<-forecast(mqogg_best, h = 5)
-autoplot(forecast_mqogg, main = "Mining, quarrying, and oil and gas extraction GDP Forecast")
+autoplot(forecast_mqogg, main = "Mining, quarrying, and oil and gas extraction GDP Forecast",
+         xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80     Lo 95    Hi 95
 #2017          11928 11192.06 12663.94 10802.472 13053.53
@@ -97,6 +104,8 @@ autoplot(forecast_mqogg, main = "Mining, quarrying, and oil and gas extraction G
 #2020          11928 10456.11 13399.89  9676.945 14179.06
 #2021          11928 10282.38 13573.62  9411.243 14444.76
 
+forecast_mqogg[["mean"]]
+# 2017 - [1] 11928
 #Mining, quarrying, and oil and gas extraction Real GDP 2017, 12749
 
 ## 3: Utilities
@@ -120,7 +129,7 @@ u_best
 #AIC=239.4   AICc=241   BIC=242.23
 
 forecast_u<-forecast(u_best, h = 5)
-autoplot(forecast_u, main = "Utilities GDP Forecast")
+autoplot(forecast_u, main = "Utilities GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       3647.384 3497.273 3797.495 3417.809 3876.959
@@ -129,7 +138,10 @@ autoplot(forecast_u, main = "Utilities GDP Forecast")
 #2020       3750.393 3577.112 3923.675 3485.382 4015.404
 #2021       3784.730 3604.385 3965.074 3508.916 4060.543
 
+forecast_u[["mean"]]
+#2017 [1] 3647.384
 # Utilities Real GDP 2017, 3766
+
 
 ## 4: Construction
 c_ind<- IND_GDP_Yr$VAL[IND_GDP_Yr$NAICS == "Construction"]
@@ -152,7 +164,7 @@ c_best
 #AIC=274.52   AICc=275.27   BIC=276.41
 
 forecast_c<-forecast(c_best, h = 5)
-autoplot(forecast_c, main = "Construction GDP Forecast")
+autoplot(forecast_c, main = "Construction GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80     Hi 80    Lo 95    Hi 95
 #2017       9541.105 9147.607  9934.603 8939.302 10142.91
@@ -161,6 +173,8 @@ autoplot(forecast_c, main = "Construction GDP Forecast")
 #2020      10165.421 9378.425 10952.417 8961.815 11369.03
 #2021      10373.526 9493.638 11253.414 9027.854 11719.20
 
+forecast_c[["mean"]]
+# 2017 - [1]  9541.105
 # Construction Real GDP, 9758
 
 ## 5: Manufacturing
@@ -184,7 +198,7 @@ m_best
 #AIC=324.44   AICc=325.94   BIC=327.42
 
 forecast_m<-forecast(m_best, h = 5)
-autoplot(forecast_m, main = "Manufacturing GDP Forecast")
+autoplot(forecast_m, main = "Manufacturing GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       13277.00 12355.16 14198.84 11867.16 14686.83
@@ -193,6 +207,8 @@ autoplot(forecast_m, main = "Manufacturing GDP Forecast")
 #2020       13218.30 11974.48 14462.12 11316.04 15120.56
 #2021       13209.32 11947.52 14471.12 11279.56 15139.08
 
+forecast_m[["mean"]]
+#2017 - [1] 13277.00
 #Manufacturing Real GDP 2017, 13895
 
 ## 6: Wholesale trade
@@ -216,7 +232,7 @@ wt_best
 #AIC=253.79   AICc=254.54   BIC=255.68
 
 forecast_wt<-forecast(wt_best, h = 5)
-autoplot(forecast_wt, main = "Wholesale Trade GDP Forecast")
+autoplot(forecast_wt, main = "Wholesale Trade GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       7836.421 7608.355 8064.487 7487.624 8185.218
@@ -225,6 +241,8 @@ autoplot(forecast_wt, main = "Wholesale Trade GDP Forecast")
 #2020       8419.684 7963.552 8875.816 7722.091 9117.278
 #2021       8614.105 8104.134 9124.076 7834.172 9394.038
 
+forecast_wt[["mean"]]
+#2017 - [1] 7836.421
 # Wholesale trade Real GDP 2017, 8085
 
 ## 7: Retail trade
@@ -248,7 +266,7 @@ rt_best
 #AIC=257.81   AICc=258.56   BIC=259.7
 
 forecast_rt<-forecast(rt_best, h = 5)
-autoplot(forecast_rt, main = "Retail Trade GDP Forecast")
+autoplot(forecast_rt, main = "Retail Trade GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80     Hi 80    Lo 95     Hi 95
 #2017       9278.316 9024.800  9531.832 8890.597  9666.035
@@ -257,6 +275,8 @@ autoplot(forecast_rt, main = "Retail Trade GDP Forecast")
 #2020       9933.263 9426.231 10440.295 9157.825 10708.701
 #2021      10151.579 9584.700 10718.458 9284.613 11018.545
 
+forecast_rt[["mean"]]
+# 2017 - [1]  9278.316
 #Retail trade Real GDP 2017, 9406
 
 ## 8: Transportation and warehousing
@@ -280,7 +300,7 @@ tw_best
 #AIC=237.75   AICc=238.5   BIC=239.63
 
 forecast_tw<-forecast(tw_best, h = 5)
-autoplot(forecast_tw, main = "Transportation and warehousing GDP Forecast")
+autoplot(forecast_tw, main = "Transportation and warehousing GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       6414.053 6264.538 6563.567 6185.390 6642.715
@@ -289,6 +309,9 @@ autoplot(forecast_tw, main = "Transportation and warehousing GDP Forecast")
 #2020       6783.211 6484.182 7082.239 6325.886 7240.535
 #2021       6906.263 6571.939 7240.587 6394.959 7417.568
 
+
+forecast_tw[["mean"]]
+# 2017 - [1] 6414.053
 #Transportation and warehousing Real GDP 2017, 6588
 
 
@@ -313,7 +336,7 @@ ic_best
 #AIC=214.41   AICc=215.21   BIC=216.19
 
 forecast_ic<-forecast(ic_best, h = 5)
-autoplot(forecast_ic, main = "Information and cultural industries GDP Forecast")
+autoplot(forecast_ic, main = "Information and cultural industries GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       4309.010 4199.730 4418.290 4141.880 4476.139
@@ -322,6 +345,8 @@ autoplot(forecast_ic, main = "Information and cultural industries GDP Forecast")
 #2020       4360.039 3965.040 4755.039 3755.939 4964.139
 #2021       4377.049 3868.404 4885.694 3599.143 5154.955
 
+forecast_ic[["mean"]]
+#2017 - [1] 4309.010
 #Information and cultural industries Real GDP 2017, 4331
 
 ## 10: Finance and insurance
@@ -345,7 +370,8 @@ fi_best
 #AIC=255.66   AICc=256.41   BIC=257.55
 
 forecast_fi<-forecast(fi_best, h = 5)
-autoplot(forecast_fi, main = "Finance and insurance GDP Forecast")
+autoplot(forecast_fi, main = "Finance and insurance GDP Forecast", xlab = "Year", ylab = "GDP")
+
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       10421.21 10181.62 10660.80 10054.79 10787.63
@@ -354,6 +380,8 @@ autoplot(forecast_fi, main = "Finance and insurance GDP Forecast")
 #2020       11120.84 10641.66 11600.02 10388.00 11853.68
 #2021       11354.05 10818.31 11889.79 10534.71 12173.39
 
+forecast_fi[["mean"]]
+#2017 - [1] 10421.21
 #Finance and insurance Real GDP 2017, 10374
 
 ## 11: Real estate and rental and leasing
@@ -377,7 +405,7 @@ rrl_best
 #AIC=235.95   AICc=236.7   BIC=237.84
 
 forecast_rrl<-forecast(rrl_best, h = 5)
-autoplot(forecast_rrl, main = "Real estate and rental and leasing GDP Forecast")
+autoplot(forecast_rrl, main = "Real estate and rental and leasing GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       18556.89 18414.24 18699.55 18338.72 18775.07
@@ -386,6 +414,8 @@ autoplot(forecast_rrl, main = "Real estate and rental and leasing GDP Forecast")
 #2020       19837.58 19552.27 20122.89 19401.24 20273.92
 #2021       20264.47 19945.49 20583.46 19776.63 20752.32
 
+forecast_rrl[["mean"]]
+#2017 - [1] 18556.89
 #Real estate and rental and leasing Real GDP 2017, 18665
 
 ## 12: Professional, scientific and technical services
@@ -410,7 +440,8 @@ psts_best
 #AIC=254.76   AICc=255.51   BIC=256.65
 
 forecast_psts<-forecast(psts_best, h = 5)
-autoplot(forecast_psts, main = "Professional, scientific and technical services GDP Forecast")
+autoplot(forecast_psts, main = "Professional, scientific and technical services GDP Forecast", 
+         xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       7946.368 7712.431 8180.306 7588.591 8304.145
@@ -419,6 +450,8 @@ autoplot(forecast_psts, main = "Professional, scientific and technical services 
 #2020       8583.474 8115.598 9051.349 7867.920 9299.028
 #2021       8795.842 8272.741 9318.943 7995.828 9595.856
 
+forecast_psts[["mean"]]
+# 2017 - [1] 7946.368
 #Professional, scientific and technical services Real GDP 2017, 8063
 
 ## 13: Administrative and support, waste management and remediation services
@@ -442,7 +475,8 @@ aswr_best
 #AIC=219.31   AICc=220.11   BIC=221.09
 
 forecast_aswr<-forecast(aswr_best, h = 5)
-autoplot(forecast_aswr, main = "Administrative and support, waste management and remediation services GDP Forecast")
+autoplot(forecast_aswr, main = "Administrative and support, waste management and remediation services GDP Forecast", 
+         xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       3556.088 3431.464 3680.712 3365.492 3746.684
@@ -451,6 +485,8 @@ autoplot(forecast_aswr, main = "Administrative and support, waste management and
 #2020       3589.352 3182.805 3995.900 2967.592 4211.113
 #2021       3600.440 3085.908 4114.973 2813.531 4387.350
 
+forecast_aswr[["mean"]]
+# 2017 - [1] 3556.088
 #Administrative and support, waste management and remediation services Real GDP 2017, 3505
 
 ## 14: Educational services
@@ -474,7 +510,7 @@ es_best
 #AIC=255.15   AICc=255.9   BIC=257.04
 
 forecast_es<-forecast(es_best, h = 5)
-autoplot(forecast_es, main = "Educational services GDP Forecast")
+autoplot(forecast_es, main = "Educational services GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       8357.737 8121.380 8594.094 7996.260 8719.214
@@ -483,6 +519,8 @@ autoplot(forecast_es, main = "Educational services GDP Forecast")
 #2020       8839.947 8367.233 9312.662 8116.993 9562.901
 #2021       9000.684 8472.174 9529.195 8192.397 9808.971
 
+forecast_es[["mean"]]
+# 2017 - [1] 8357.737
 #Educational services Real GDP 2017, 8447
 
 ## 15: Health care and social assistance
@@ -506,7 +544,7 @@ hcsa_best
 #AIC=217.62   AICc=218.37   BIC=219.51
 
 forecast_hcsa<-forecast(hcsa_best, h = 5)
-autoplot(forecast_hcsa, main = "Health care and social assistance GDP Forecast")
+autoplot(forecast_hcsa, main = "Health care and social assistance GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast     Lo 80     Hi 80    Lo 95     Hi 95
 #2017       9607.421  9519.366  9695.476 9472.753  9742.089
@@ -515,6 +553,8 @@ autoplot(forecast_hcsa, main = "Health care and social assistance GDP Forecast")
 #2020      10082.684  9906.575 10258.794 9813.348 10352.021
 #2021      10241.105 10044.209 10438.002 9939.978 10542.233
 
+forecast_hcsa[["mean"]]
+#2017 - [1]  9607.421
 #Health care and social assistance Real GDP 2017, 9715
 
 ## 16: Arts, entertainment and recreation
@@ -533,7 +573,7 @@ aer_best
 #AIC=203.74   AICc=203.97   BIC=204.68
 
 forecast_aer<-forecast(aer_best, h = 5)
-autoplot(forecast_aer, main = "Arts, entertainment and recreation GDP Forecast")
+autoplot(forecast_aer, main = "Arts, entertainment and recreation GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017           1046 983.3242 1108.676 950.1456 1141.854
@@ -542,6 +582,8 @@ autoplot(forecast_aer, main = "Arts, entertainment and recreation GDP Forecast")
 #2020           1046 920.6483 1171.352 854.2911 1237.709
 #2021           1046 905.8526 1186.147 831.6630 1260.337
 
+forecast_aer[["mean"]]
+# 2017 - [1] 1046
 #Arts, entertainment and recreation Real GDP 2017, 1086
 
 ## 17: Accommodation and food services
@@ -565,7 +607,7 @@ afs_best
 #AIC=215.46   AICc=216.21   BIC=217.35
 
 forecast_afs<-forecast(afs_best, h = 5)
-autoplot(forecast_afs, main = "Accommodation and food services GDP Forecast")
+autoplot(forecast_afs, main = "Accommodation and food services GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       2925.105 2841.932 3008.278 2797.903 3052.308
@@ -574,6 +616,8 @@ autoplot(forecast_afs, main = "Accommodation and food services GDP Forecast")
 #2020       3090.421 2924.075 3256.767 2836.016 3344.826
 #2021       3145.526 2959.546 3331.507 2861.093 3429.959
 
+forecast_afs[["mean"]]
+# 2017 - [1] 2925.105
 #Accommodation and food services Real GDP 2017, 3016
 
 ## 18: Other services (except public administration)
@@ -597,7 +641,7 @@ os_best
 #AIC=197.03   AICc=197.83   BIC=198.81
 
 forecast_os<-forecast(os_best, h = 5)
-autoplot(forecast_os, main = "Other services GDP Forecast")
+autoplot(forecast_os, main = "Other services GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017       2709.205 2642.543 2775.867 2607.254 2811.156
@@ -606,6 +650,8 @@ autoplot(forecast_os, main = "Other services GDP Forecast")
 #2020       2757.820 2563.323 2952.318 2460.362 3055.278
 #2021       2774.025 2533.170 3014.880 2405.669 3142.381
 
+forecast_os[["mean"]]
+#2017 - [1] 2709.205
 #Other services (except public administration) Real GDP 2017, 2733
 
 ## 19: Public administration
@@ -629,7 +675,7 @@ pa_best
 #AIC=253.34   AICc=254.09   BIC=255.23
 
 forecast_pa<-forecast(pa_best, h = 5)
-autoplot(forecast_pa, main = "Public administration GDP Forecast")
+autoplot(forecast_pa, main = "Public administration GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80     Hi 80    Lo 95     Hi 95
 #2017       8923.789 8698.426  9149.153 8579.126  9268.453
@@ -638,6 +684,8 @@ autoplot(forecast_pa, main = "Public administration GDP Forecast")
 #2020       9361.158 8910.431  9811.885 8671.830 10050.486
 #2021       9506.947 9003.019 10010.876 8736.256 10277.639
 
+forecast_pa[["mean"]]
+#2017 - [1] 8923.789
 #Public administration Real GDP 2017, 9043
 
 ## 20: Management of companies and enterprises (has only 11 years of complete data)
@@ -662,7 +710,7 @@ moce_best
 #AIC=99.96   AICc=101.67   BIC=100.56
 
 forecast_moce<-forecast(moce_best, h = 5)
-autoplot(forecast_moce, main = "Management of companies and enterprises GDP Forecast")
+autoplot(forecast_moce, main = "Management of companies and enterprises GDP Forecast", xlab = "Year", ylab = "GDP")
 
 #Point Forecast    Lo 80    Hi 80    Lo 95    Hi 95
 #2017          947.6 907.9699 987.2301 886.9909 1008.209
@@ -671,5 +719,8 @@ autoplot(forecast_moce, main = "Management of companies and enterprises GDP Fore
 #2020          947.6 907.9699 987.2301 886.9909 1008.209
 #2021          947.6 907.9699 987.2301 886.9909 1008.209
 
+forecast_moce[["mean"]]
+#2017 - [1] 947.6
 #Management of companies and enterprises Real 2017 GDP, 902
 
+View(IND_GDP_2017)
