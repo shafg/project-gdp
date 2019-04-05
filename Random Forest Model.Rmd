@@ -196,6 +196,15 @@ data.frame( R2 = R2(RF_Pred5, test_data$VAL),
 
 RF_RMSE <- RMSE(RF_Pred5, test_data$VAL) #[1] 915.5825
 
+rf_err_rate <- RMSE(RF_Pred5, test_data$VAL)/mean(test_data$VAL) #prediction error rate
+rf_err_rate 
 
 ```
+
+
+
+
+
+
+
 
